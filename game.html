@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翻轉魚的大冒險</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #e6f3ff;
+        }
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: url('https://i.imgur.com/aA53yqA.jpeg') center/cover; /* 加入背景圖片 */
+        }
+        #aquarium {
+            width: 100vw;
+            height: 80vh;
+            background-color: rgba(179, 224, 255, 0.7);
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        #fish {
+            position: absolute;
+            width: 70px;
+            transition: top 0.1s ease;
+        }
+        .food {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-size: cover;
+            border-radius: 5px;
+            background-image: url('https://i.imgur.com/Y6vGBWA.png');
+        }
+        .obstacle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-size: cover;
+            background-repeat: no-repeat;
+            border-radius: 5px;
+        }
+        .net {
+            background-image: url('https://i.imgur.com/FVROTlw.png'); /* 漁網圖片 URL */
+        }
+        .trash {
+            background-image: url('https://i.imgur.com/BvMrZ5k.png'); /* 垃圾圖片 URL */
+        }
+        .rock {
+            background-image: url('https://i.imgur.com/A4PwxeI.png'); /* 岩石圖片 URL */
+        }
+        #score {
+            font-size: 24px;
+            margin: 20px;
+        }
+        #end-screen {
+            display: none;
+            font-size: 24px;
+            text-align: center;
+        }
+        #final-score {
+            margin-top: 20px;
+        }
+        #restart-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="aquarium">
+            <img id="fish" src="https://i.imgur.com/RVp15UT.png" alt="翻轉魚"> <!-- 翻轉魚圖片 URL -->
+        </div>
+        <div id="score">分數: 0</div>
+        <div id="end-screen">
+            <div id="final-score">最終分數: 0</div>
+            <button id="restart-button">重新開始</button>
+        </div>
+    </div>
+
+    <script>
+        const fish = document.getElementById('fish');
+        const aquarium = document.getElementById('aquarium');
+        const scoreDisplay = document.getElementById('score');
+        const endScreen = document.getElementById('end-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        let score = 0;
+        let gameInterval;
+        let obstacleInterval;
+        let foodInterval;
+        let speedInterval;
+        let obstacles = [];
+        let foods = [];
+        let obstacleSpeed = 5;
+        let gameStarted = false;
+
+        function startGame() {
+            score = 0;
+            gameStarted = false;
+            obstacleSpeed = 5;
+            scoreDisplay.textContent = `分數: ${score}`;
+            endScreen.style.display = 'none';
+            aquarium.innerHTML = '';
+            aquarium.appendChild(fish);
+            fish.style.left = '50px';
+            fish.style.top = '50%';
+            obstacles = [];
+            foods = [];
+            spawnObstacles();
+            spawnFood();
+            aquarium.addEventListener('click', startGameOnFirstClick);
+        }
+
+        function startGameOnFirstClick() {
+            gameStarted = true;
+            aquarium.removeEventListener('click', startGameOnFirstClick);
+            gameInterval = setInterval(gameLoop, 20);
+            speedInterval = setInterval(increaseSpeed, 30000);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(foodInterval);
+            clearInterval(obstacleInterval);
+            clearInterval(speedInterval);
+            finalScoreDisplay.textContent = `最終分數: ${score}`;
+            endScreen.style.display = 'block';
+        }
+
+        function spawnFood() {
+            for (let i = 0; i < 5; i++) {
+                const food = document.createElement('div');
+                food.className = 'food';
+                food.style.left = `${Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.2}px`;
+                food.style.top = `${Math.random() * (window.innerHeight * 0.8 - 40)}px`;
+                aquarium.appendChild(food);
+                foods.push(food);
+            }
+            foodInterval = setInterval(() => {
+                const food = document.createElement('div');
+                food.className = 'food';
+                food.style.left = `${window.innerWidth}px`;
+                food.style.top = `${Math.random() * (window.innerHeight * 0.8 - 40)}px`;
+                aquarium.appendChild(food);
+                foods.push(food);
+            }, 1500);
+        }
+
+        function spawnObstacles() {
+            for (let i = 0; i < 10; i++) {
+                const types = ['rock', 'net', 'trash'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                const obstacle = document.createElement('div');
+                obstacle.className = `obstacle ${type}`;
+                obstacle.style.left = `${Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.2}px`;
+                obstacle.style.top = `${Math.random() * (window.innerHeight * 0.8 - 60)}px`;
+                aquarium.appendChild(obstacle);
+                obstacles.push(obstacle);
+            }
+            obstacleInterval = setInterval(() => {
+                const types = ['rock', 'net', 'trash'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                const obstacle = document.createElement('div');
+                obstacle.className = `obstacle ${type}`;
+                obstacle.style.left = `${window.innerWidth}px`;
+                obstacle.style.top = `${Math.random() * (window.innerHeight * 0.8 - 60)}px`;
+                aquarium.appendChild(obstacle);
+                obstacles.push(obstacle);
+            }, 1000);
+        }
+
+        function increaseSpeed() {
+            obstacleSpeed += 1;
+        }
+
+        function moveElements() {
+            if (gameStarted) {
+                obstacles.forEach(obstacle => {
+                    let currentLeft = parseFloat(obstacle.style.left);
+                    if (currentLeft > -60) {
+                        obstacle.style.left = `${currentLeft - obstacleSpeed}px`;
+                    } else {
+                        aquarium.removeChild(obstacle);
+                        obstacles = obstacles.filter(o => o !== obstacle);
+                    }
+                });
+
+                foods.forEach(food => {
+                    let currentLeft = parseFloat(food.style.left);
+                    if (currentLeft > -40) {
+                        food.style.left = `${currentLeft - obstacleSpeed}px`;
+                    } else {
+                        aquarium.removeChild(food);
+                        foods = foods.filter(f => f !== food);
+                    }
+                });
+            }
+        }
+
+        function checkCollision() {
+            obstacles.forEach(obstacle => {
+                let fishRect = fish.getBoundingClientRect();
+                let obstacleRect = obstacle.getBoundingClientRect();
+                if (!(fishRect.right < obstacleRect.left || 
+                      fishRect.left > obstacleRect.right || 
+                      fishRect.bottom < obstacleRect.top || 
+                      fishRect.top > obstacleRect.bottom)) {
+                    endGame();
+                }
+            });
+
+            foods.forEach(food => {
+                let fishRect = fish.getBoundingClientRect();
+                let foodRect = food.getBoundingClientRect();
+                if (!(fishRect.right < foodRect.left || 
+                      fishRect.left > foodRect.right || 
+                      fishRect.bottom < foodRect.top || 
+                      fishRect.top > foodRect.bottom)) {
+                    aquarium.removeChild(food);
+                    foods = foods.filter(f => f !== food);
+                    score++;
+                    scoreDisplay.textContent = `分數: ${score}`;
+                }
+            });
+        }
+
+        function gameLoop() {
+            moveElements();
+            checkCollision();
+        }
+
+        aquarium.addEventListener('mousemove', (e) => {
+            const rect = aquarium.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            if (y >= 0 && y <= window.innerHeight * 0.8 - fish.clientHeight) {
+                fish.style.top = `${y}px`;
+            }
+        });
+
+        restartButton.addEventListener('click', startGame);
+
+        startGame();
+    </script>
+</body>
+</html>
